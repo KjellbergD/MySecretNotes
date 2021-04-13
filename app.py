@@ -1,4 +1,4 @@
-import json, sqlite3, click, functools, os, hashlib,time, random, sys, html
+import json, sqlite3, click, functools, os, hashlib,time, random, sys, re
 from flask import Flask, current_app, g, session, redirect, render_template, url_for, request
 
 
@@ -70,25 +70,24 @@ def notes():
     #Posting a new note:
     if request.method == 'POST':
         if request.form['submit_button'] == 'add note':
-            note = html.escape(request.form['noteinput']) #Sanitize
+            note = request.form['noteinput']
             db = connect_db()
             c = db.cursor()
-            statement = """INSERT INTO notes(id,assocUser,dateWritten,note,publicID) VALUES(null,%s,'%s','%s',%s);""" %(session['userid'],time.strftime('%Y-%m-%d %H:%M:%S'),note,random.randrange(1000000000, 9999999999))
-            print(statement)
-            c.execute(statement)
+            c.execute("INSERT INTO notes(id,assocUser,dateWritten,note,publicID) VALUES(null,?,?,?,?)", (session['userid'],time.strftime('%Y-%m-%d %H:%M:%S'),note,random.randrange(1000000000, 9999999999)))
             db.commit()
             db.close()
         elif request.form['submit_button'] == 'import note':
-            noteid = html.escape(request.form['noteid']) #Sanitize
+            noteid = request.form['noteid']            
+            if not re.match(r"^\d*$", noteid): # matches only digits
+                importerror="Illegal input!"
+                return redirect(url_for('notes'))  
             db = connect_db()
             c = db.cursor()
-            statement = """SELECT * from NOTES where publicID = %s""" %noteid
-            c.execute(statement)
+            c.execute("SELECT * from NOTES where publicID = ?", (noteid, ))
             result = c.fetchall()
             if(len(result)>0):
                 row = result[0]
-                statement = """INSERT INTO notes(id,assocUser,dateWritten,note,publicID) VALUES(null,%s,'%s','%s',%s);""" %(session['userid'],row[2],row[3],row[4])
-                c.execute(statement)
+                c.execute("INSERT INTO notes(id,assocUser,dateWritten,note,publicID) VALUES(null,?,?,?,?)", (session['userid'],row[2],row[3],row[4]))
             else:
                 importerror="No such note with that ID!"
             db.commit()
@@ -96,9 +95,7 @@ def notes():
     
     db = connect_db()
     c = db.cursor()
-    statement = "SELECT * FROM notes WHERE assocUser = %s;" %session['userid']
-    print(statement)
-    c.execute(statement)
+    c.execute("SELECT * FROM notes WHERE assocUser = ?", (session['userid'],))
     notes = c.fetchall()
     print(notes)
     
@@ -109,12 +106,11 @@ def notes():
 def login():
     error = ""
     if request.method == 'POST':
-        username = html.escape(request.form['username']) #Sanitize
-        password = html.escape(request.form['password']) #Sanitize
+        username = request.form['username'] 
+        password = request.form['password'] 
         db = connect_db()
         c = db.cursor()
-        statement = "SELECT * FROM users WHERE username = '%s' AND password = '%s';" %(username, password)
-        c.execute(statement)
+        c.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
         result = c.fetchall()
 
         if len(result) > 0:
@@ -136,26 +132,22 @@ def register():
     if request.method == 'POST':
         
 
-        username = html.escape(request.form['username']) #Sanitize
-        password = html.escape(request.form['password']) #Sanitize
+        username = request.form['username']
+        password = request.form['password']
         db = connect_db()
         c = db.cursor()
-        pass_statement = """SELECT * FROM users WHERE password = '%s';""" %password
-        user_statement = """SELECT * FROM users WHERE username = '%s';""" %username
-        c.execute(pass_statement)
+        c.execute("SELECT * FROM users WHERE password = ?", (password,))
         if(len(c.fetchall())>0):
             errored = True
             passworderror = "That password is already in use by someone else!"
 
-        c.execute(user_statement)
+        c.execute("SELECT * FROM users WHERE username = ?", (username,))
         if(len(c.fetchall())>0):
             errored = True
             usererror = "That username is already in use by someone else!"
 
         if(not errored):
-            statement = """INSERT INTO users(id,username,password) VALUES(null,'%s','%s');""" %(username,password)
-            print(statement)
-            c.execute(statement)
+            c.execute("INSERT INTO users(id,username,password) VALUES(null,?,?)", (username,password))
             db.commit()
             db.close()
             return f"""<html>
