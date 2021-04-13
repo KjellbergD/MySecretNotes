@@ -1,4 +1,4 @@
-import json, sqlite3, click, functools, os, hashlib,time, random, sys
+import json, sqlite3, click, functools, os, hashlib,time, random, sys, html
 from flask import Flask, current_app, g, session, redirect, render_template, url_for, request
 
 
@@ -70,7 +70,7 @@ def notes():
     #Posting a new note:
     if request.method == 'POST':
         if request.form['submit_button'] == 'add note':
-            note = request.form['noteinput']
+            note = html.escape(request.form['noteinput']) #Sanitize
             db = connect_db()
             c = db.cursor()
             statement = """INSERT INTO notes(id,assocUser,dateWritten,note,publicID) VALUES(null,%s,'%s','%s',%s);""" %(session['userid'],time.strftime('%Y-%m-%d %H:%M:%S'),note,random.randrange(1000000000, 9999999999))
@@ -79,7 +79,7 @@ def notes():
             db.commit()
             db.close()
         elif request.form['submit_button'] == 'import note':
-            noteid = request.form['noteid']
+            noteid = html.escape(request.form['noteid']) #Sanitize
             db = connect_db()
             c = db.cursor()
             statement = """SELECT * from NOTES where publicID = %s""" %noteid
@@ -109,8 +109,8 @@ def notes():
 def login():
     error = ""
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = html.escape(request.form['username']) #Sanitize
+        password = html.escape(request.form['password']) #Sanitize
         db = connect_db()
         c = db.cursor()
         statement = "SELECT * FROM users WHERE username = '%s' AND password = '%s';" %(username, password)
@@ -136,8 +136,8 @@ def register():
     if request.method == 'POST':
         
 
-        username = request.form['username']
-        password = request.form['password']
+        username = html.escape(request.form['username']) #Sanitize
+        password = html.escape(request.form['password']) #Sanitize
         db = connect_db()
         c = db.cursor()
         pass_statement = """SELECT * FROM users WHERE password = '%s';""" %password
