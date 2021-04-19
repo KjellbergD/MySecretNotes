@@ -106,7 +106,7 @@
   }
   
   .notes__body-top-padding {
-    padding-top: 140px;
+    padding-top: 50px !important;
   }
   
   .notes__body-bottom-padding {

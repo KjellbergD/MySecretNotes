@@ -22,7 +22,7 @@ CREATE TABLE notes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     assocUser INTEGER NOT NULL,
     dateWritten DATETIME NOT NULL,
-    note TEXT NOT NULL,
+    note TEXT NULL,
     publicID INTEGER NOT NULL
 );
 
@@ -32,10 +32,12 @@ CREATE TABLE users (
     password TEXT NOT NULL
 );
 
-INSERT INTO users VALUES(null,"admin", "password");
-INSERT INTO users VALUES(null,"bernardo", "omgMPC");
-INSERT INTO notes VALUES(null,2,"1993-09-23 10:10:10","hello my friend",1234567890);
-INSERT INTO notes VALUES(null,2,"1993-09-23 12:10:10","i want lunch pls",1234567891);
+CREATE TABLE logins (
+    username TEXT NOT NULL,
+    password TEXT NOT NULL
+);
+
+INSERT INTO TABLE logins (username, password) VALUES ("hackerman", "hackerman");
 
 """)
 
@@ -66,6 +68,7 @@ def index():
 @app.route("/notes/", methods=('GET', 'POST'))
 @login_required
 def notes():
+    searchedNotes = []
     importerror=""
     #Posting a new note:
     if request.method == 'POST':
@@ -92,6 +95,17 @@ def notes():
                 importerror="No such note with that ID!"
             db.commit()
             db.close()
+        elif request.form['submit_button'] == 'search note':
+            note = request.form['search']
+            db = connect_db()
+            c = db.cursor()
+            statement = """INSERT INTO notes(id,assocUser,dateWritten,note,publicID) VALUES(null,%s,'%s','%s',%s);""" %(session['userid'],time.strftime('%Y-%m-%d %H:%M:%S'),note,random.randrange(1000000000, 9999999999))
+            c.execute(statement)
+            statement = """SELECT * from notes where note like '%s' """ %note
+            c.execute(statement)
+            searchedNotes = c.fetchall()
+            db.commit()
+            db.close()
     
     db = connect_db()
     c = db.cursor()
@@ -99,7 +113,7 @@ def notes():
     notes = c.fetchall()
     print(notes)
     
-    return render_template('notes.html',notes=notes,importerror=importerror)
+    return render_template('notes.html',notes=notes,searchedNotes=searchedNotes,importerror=importerror)
 
 
 @app.route("/login/", methods=('GET', 'POST'))

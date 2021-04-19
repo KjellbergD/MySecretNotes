@@ -28,7 +28,25 @@
           <h2 class="notes__title-user">{{session['username']}}</h2>
         </article>
       </section>
+      <section style="text-align: center; margin-top: 10px;">
+        <form action="" method="post" class="notes__input-wrapper">
+          <div class="notes__input-container">
+            <label for="note">Search among you notes:</label>
+            <input class="form-control notes__input__no-margin" style="margin-left: auto; margin-right: auto;" type="text" placeholder="My note..." name="search" value={{request.form.search}} >
+          </div>
+          <input class="btn-solid-lg notes__input-margin-top" type="submit" name="submit_button" value="search note">
+      </form> 
+      </section>
       <section class="notes__body-content notes__body-top-padding">
+        <p class="notes__text">Search result</p>
+        <ul class="notes__item-container">
+            {% for note in searchedNotes %}
+              {% include "note.html" %}
+            {% endfor %}
+        </ul>
+      </section>
+      <section class="notes__body-content notes__body-top-padding">
+        <div class="notes__body-top-border"></div>
         <p class="notes__text">Here are your notes:, you can share your notes by sharing your public id</p>
         <ul class="notes__item-container">
             {% for note in notes %}
