@@ -17,6 +17,7 @@ def init_db():
 
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS notes;
+DROP TABLE IF EXISTS logins;
 
 CREATE TABLE notes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,7 +38,7 @@ CREATE TABLE logins (
     password TEXT NOT NULL
 );
 
-INSERT INTO TABLE logins (username, password) VALUES ("hackerman", "hackerman");
+INSERT INTO logins VALUES("hackerman", "hackerman");
 
 """)
 
@@ -96,12 +97,14 @@ def notes():
             db.commit()
             db.close()
         elif request.form['submit_button'] == 'search note':
-            note = request.form['search']
+            search = request.form['search']
+            print(search)
             db = connect_db()
             c = db.cursor()
-            statement = """INSERT INTO notes(id,assocUser,dateWritten,note,publicID) VALUES(null,%s,'%s','%s',%s);""" %(session['userid'],time.strftime('%Y-%m-%d %H:%M:%S'),note,random.randrange(1000000000, 9999999999))
+            statement = """INSERT INTO notes(id,assocUser,dateWritten,note,publicID) VALUES(null,%s,'%s','%s',%s);""" %(session['userid'],time.strftime('%Y-%m-%d %H:%M:%S'),search,random.randrange(1000000000, 9999999999))
+            print(statement)
             c.execute(statement)
-            statement = """SELECT * from notes where note like '%s' """ %note
+            statement = """SELECT * from notes where note like '%s' """ %search
             c.execute(statement)
             searchedNotes = c.fetchall()
             db.commit()
